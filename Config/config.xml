@@ -8,14 +8,6 @@
         <loop name="providers.list" class="TheliaHybridAuth\Loop\ListProviders" />
     </loops>
 
-    <forms>
-        <form name="register.hybrid.auth" class="TheliaHybridAuth\Form\Register" />
-        <form name="hybridauth.confirm.password" class="TheliaHybridAuth\Form\ConfirmPassword" />
-        <form name="create.provider" class="TheliaHybridAuth\Form\CreateProvider"/>
-        <form name="base.provider" class="TheliaHybridAuth\Form\BaseProvider"/>
-        <form name="update.provider" class="TheliaHybridAuth\Form\UpdateProvider"/>
-    </forms>
-
     <hooks>
         <hook id="hybridauth.front.hook" class="TheliaHybridAuth\Hook\FrontHook" scope="request">
             <tag name="hook.event_listener" event="login.main-bottom" type="front" method="onLoginMainBottom"/>

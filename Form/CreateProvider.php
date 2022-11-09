@@ -65,7 +65,7 @@ class CreateProvider extends BaseProvider
         ;
     }
 
-    public function getName()
+    public static function getName(): string
     {
         return 'create_provider';
     }

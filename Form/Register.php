@@ -25,7 +25,12 @@ use TheliaHybridAuth\TheliaHybridAuth;
  */
 class Register extends CustomerCreateForm
 {
-    public function buildForm()
+    public static function getName(): string
+    {
+        return 'register_hybrid_auth';
+    }
+
+    public function buildForm(): void
     {
         parent::buildForm();
 
