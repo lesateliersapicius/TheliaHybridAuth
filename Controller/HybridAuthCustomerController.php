@@ -14,6 +14,7 @@ namespace TheliaHybridAuth\Controller;
 
 use Front\Controller\CustomerController;
 use Front\Front;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Thelia\Core\Event\Customer\CustomerCreateOrUpdateEvent;
 use Thelia\Core\Event\Newsletter\NewsletterEvent;
 use Thelia\Core\Event\TheliaEvents;
@@ -166,7 +167,7 @@ class HybridAuthCustomerController extends CustomerController
         return $this->generateRedirectFromRoute('customer.home');
     }
 
-    public function createAction()
+    public function createAction(EventDispatcherInterface $eventDispatcher)
     {
         if (! $this->getSecurityContext()->hasCustomerUser()) {
             $customerCreation = $this->createForm("register.hybrid.auth", "form");
@@ -254,7 +255,7 @@ class HybridAuthCustomerController extends CustomerController
         }
     }
 
-    public function loginAction()
+    public function loginAction(EventDispatcherInterface $eventDispatcher)
     {
         if (!$this->getSecurityContext()->hasCustomerUser()) {
 

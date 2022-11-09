@@ -19,7 +19,7 @@ namespace TheliaHybridAuth\Form;
  */
 class UpdateProvider extends CreateProvider
 {
-    public function getName()
+    public static function getName(): string
     {
         return 'update_provider';
     }
