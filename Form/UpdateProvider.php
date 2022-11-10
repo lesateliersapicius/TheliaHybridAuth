@@ -12,6 +12,8 @@
 
 namespace TheliaHybridAuth\Form;
 
+use Symfony\Component\Form\Extension\Core\Type\HiddenType;
+
 /**
  * Class UpdateProvider
  * @package TheliaHybridAuth\Form
@@ -29,6 +31,6 @@ class UpdateProvider extends CreateProvider
         parent::buildForm();
 
         $this->formBuilder
-            ->add('name', 'hidden');
+            ->add('name', HiddenType::class);
     }
 }
