@@ -14,8 +14,10 @@ namespace TheliaHybridAuth\Controller;
 
 use Hybridauth\Hybridauth;
 use Thelia\Controller\Admin\BaseAdminController;
+use Thelia\Core\HttpFoundation\Request;
 use Thelia\Core\Security\AccessManager;
 use Thelia\Core\Security\Resource\AdminResources;
+use Thelia\Core\Template\ParserContext;
 use Thelia\Core\Translation\Translator;
 use Thelia\Log\Tlog;
 use Thelia\Tools\URL;
@@ -30,6 +32,12 @@ use TheliaHybridAuth\TheliaHybridAuth;
  */
 class Configuration extends BaseAdminController
 {
+    public function __construct(
+        protected Request $request,
+        protected ParserContext $parserContext
+    ) {
+    }
+
     public function viewAction($providerName)
     {
         if (null !== $response = $this->checkAuth(array(), 'TheliaHybridAuth', AccessManager::VIEW)) {
@@ -54,9 +62,9 @@ class Configuration extends BaseAdminController
             'scope' => $providerScope
         ));
 
-        $this->getParserContext()->addForm($form);
+        $this->parserContext->addForm($form);
 
-        if ($this->getRequest()->isXmlHttpRequest()) {
+        if ($this->request->isXmlHttpRequest()) {
             return $this->render("include/form-update");
         } else {
             return $this->generateRedirectFromRoute(
@@ -74,7 +82,6 @@ class Configuration extends BaseAdminController
         }
 
         try {
-
             TheliaHybridAuth::initHybridAuth();
 
             $config = TheliaHybridAuth::getConfigByProvider($providerName);
@@ -106,7 +113,6 @@ class Configuration extends BaseAdminController
             ),
             array('module_code' => 'TheliaHybridAuth')
         );
-
     }
 
     public function addProviderAction()
@@ -118,7 +124,6 @@ class Configuration extends BaseAdminController
         $formProvider = $this->createForm('create.provider');
 
         try {
-
             $form = $this->validateForm($formProvider, 'POST');
 
             $providerName = $form->get('name')->getData();
@@ -145,7 +150,6 @@ class Configuration extends BaseAdminController
             ;
 
             return $this->generateSuccessRedirect($formProvider);
-
         } catch (\Exception $e) {
             $message = Translator::getInstance()->trans(
                 'Oops an error occured : %e',
@@ -157,7 +161,7 @@ class Configuration extends BaseAdminController
         }
         $formProvider->setErrorMessage($message);
 
-        $this->getParserContext()
+        $this->parserContext
             ->addForm($formProvider)
             ->setGeneralError($message)
         ;
@@ -182,7 +186,6 @@ class Configuration extends BaseAdminController
         $formProvider = $this->createForm('update.provider');
 
         try {
-
             $form = $this->validateForm($formProvider, 'POST');
 
             $providerConfig = ProviderConfigQuery::create()->filterByProvider($providerName)->findOne();
@@ -195,7 +198,6 @@ class Configuration extends BaseAdminController
             ;
 
             return $this->viewAction($providerName);
-
         } catch (\Exception $e) {
             $message = Translator::getInstance()->trans(
                 'Oops an error occured : %e',
@@ -208,7 +210,7 @@ class Configuration extends BaseAdminController
 
         $formProvider->setErrorMessage($message);
 
-        $this->getParserContext()
+        $this->parserContext
             ->addForm($formProvider)
             ->setGeneralError($message)
         ;
@@ -222,7 +224,6 @@ class Configuration extends BaseAdminController
                 array('module_code' => 'TheliaHybridAuth')
             );
         }
-
     }
 
     public function deleteProviderAction($providerName)
@@ -234,11 +235,9 @@ class Configuration extends BaseAdminController
         $formProvider = $this->createForm('base.provider');
 
         try {
-
             $this->validateForm($formProvider, 'POST');
 
             if (null === $providerConfig = ProviderConfigQuery::create()->filterByProvider($providerName)->findOne()) {
-
                 throw new \Exception(Translator::getInstance()->trans(
                     'The provider %name doesn\'t exist',
                     [
@@ -246,17 +245,14 @@ class Configuration extends BaseAdminController
                     ],
                     TheliaHybridAuth::DOMAIN_NAME
                 ));
-
             } else {
-
                 $providerConfig->delete();
             }
 
             return $this->generateSuccessRedirect($formProvider);
-
         } catch (\Exception $e) {
             $this->setupFormErrorContext(
-                $this->getTranslator()->trans("%provider delete", array('%provider' => $providerName)),
+                Translator::getInstance()->trans("%provider delete", array('%provider' => $providerName)),
                 $e->getMessage(),
                 $formProvider
             );
@@ -280,7 +276,6 @@ class Configuration extends BaseAdminController
         }
         $message = null;
         try {
-
             $providerConfig = ProviderConfigQuery::create()->filterByProvider($providerName)->findOne();
 
             if (!$providerConfig->getId() || !$providerConfig->getSecret()) {
@@ -295,14 +290,13 @@ class Configuration extends BaseAdminController
                 ->setEnabled(($providerConfig->getEnabled()) ? false : true)
                 ->save()
             ;
-
         } catch (\Exception $e) {
             $message = $e->getMessage();
 
             Tlog::getInstance()->addError("Failed to activate/desactivate provider:", $e);
         }
 
-        if ($this->getRequest()->isXmlHttpRequest()) {
+        if ($this->request->isXmlHttpRequest()) {
             if (null !== $message) {
                 $response = $this->jsonResponse(json_encode(array(
                     "error" => $message
