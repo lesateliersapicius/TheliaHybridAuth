@@ -31,7 +31,7 @@ The first thing to do after the installation is to create an application on a so
 Here you need to override the "register-hybrid-auth" template in templates/frontOffice/default. For this, use your actual register template and follow these steps :
 
 - Check that the hook "register.top" is available on your register template AND new register-hybrid-auth template
-- Change form name for "register.hybrid.auth"
+- Change form name for "register_hybrid_auth"
 - Change the form action to "register/hybridauth"
 - Find the password and password_confirm fields and change their types to "hidden" and add "value="{$value}"" in the input tag
 

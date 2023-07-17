@@ -25,6 +25,7 @@ use Thelia\Model\NewsletterQuery;
 use Thelia\Tools\Password;
 use Thelia\Tools\URL;
 use TheliaHybridAuth\Form\ConfirmPassword;
+use TheliaHybridAuth\Form\Register;
 use TheliaHybridAuth\Model\HybridAuth;
 use TheliaHybridAuth\Model\HybridAuthQuery;
 use TheliaHybridAuth\TheliaHybridAuth;
@@ -67,7 +68,7 @@ class HybridAuthCustomerController extends CustomerController
             $this->getRequest()->getSession()->set("hybridauth_provider", $providerName);
             $this->getRequest()->getSession()->set("hybridauth_token", $user_profile->identifier);
 
-            $form = $this->createForm("register.hybrid.auth", "form", array(
+            $form = $this->createForm(Register::getName(), "form", array(
                 'title' => $this->getTitleFromGender($user_profile),
                 'firstname' => $user_profile->firstName,
                 'lastname' => $user_profile->lastName,
@@ -90,7 +91,7 @@ class HybridAuthCustomerController extends CustomerController
             $message = $e->getMessage();
         }
 
-        $form = $this->createForm("register.hybrid.auth");
+        $form = $this->createForm(Register::getName());
 
         $form->setErrorMessage($message);
 
@@ -169,7 +170,7 @@ class HybridAuthCustomerController extends CustomerController
     public function createAction()
     {
         if (! $this->getSecurityContext()->hasCustomerUser()) {
-            $customerCreation = $this->createForm("register.hybrid.auth", "form");
+            $customerCreation = $this->createForm(Register::getName(), "form");
 
             try {
                 $form = $this->validateForm($customerCreation, "post");

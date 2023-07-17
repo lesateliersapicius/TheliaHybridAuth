@@ -19,7 +19,7 @@
 
       <h1 id="main-label" class="page-header">{intl l="Create New Account"}</h1>
       {hook name="register.top"}
-      {form name="register.hybrid.auth"}
+      {form name="register_hybrid_auth"}
       {form_field field="provider"}
         <div class="alert alert-info" role="alert">
           {intl l="Your information have been pre-filled with %provider, please check the following information and complete to register." d="theliahybridauth.fo.default" provider={$value}}

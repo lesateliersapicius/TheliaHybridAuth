@@ -21,13 +21,12 @@ use Thelia\Form\BaseForm;
  */
 class BaseProvider extends BaseForm
 {
-    public function getName()
+    public static function getName(): string
     {
-        return 'provider';
+        return 'base_provider';
     }
 
     public function buildForm()
     {
-
     }
 }

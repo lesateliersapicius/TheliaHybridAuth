@@ -12,6 +12,7 @@
 
 namespace TheliaHybridAuth\Form;
 
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Validator\Constraints;
 use Thelia\Core\Translation\Translator;
 use TheliaHybridAuth\TheliaHybridAuth;
@@ -26,46 +27,46 @@ class CreateProvider extends BaseProvider
     public function buildForm()
     {
         $this->formBuilder
-            ->add('name', 'text', array(
+            ->add('name', TextType::class, [
                 'required' => true,
-                'label' => Translator::getInstance()->trans('Name', array(), TheliaHybridAuth::DOMAIN_NAME),
-                'label_attr' => array(
+                'label' => Translator::getInstance()->trans('Name', [], TheliaHybridAuth::DOMAIN_NAME),
+                'label_attr' => [
                     'for' => 'name'
-                ),
-                "constraints" => array(
+                ],
+                "constraints" => [
                     new Constraints\NotBlank()
-                ),
-            ))
-            ->add('id', 'text', array(
+                ],
+            ])
+            ->add('id', TextType::class, [
                 'required' => true,
                 'label' => 'Id',
-                'label_attr' => array(
+                'label_attr' => [
                     'for' => 'id'
-                ),
-                "constraints" => array(
+                ],
+                "constraints" => [
                     new Constraints\NotBlank()
-                ),
-            ))
-            ->add('secret', 'text', array(
+                ],
+            ])
+            ->add('secret', TextType::class, [
                 'required' => true,
-                'label' => Translator::getInstance()->trans('Secret', array(), TheliaHybridAuth::DOMAIN_NAME),
-                'label_attr' => array(
+                'label' => Translator::getInstance()->trans('Secret', [], TheliaHybridAuth::DOMAIN_NAME),
+                'label_attr' => [
                     'for' => 'secret'
-                ),
-                "constraints" => array(
+                ],
+                "constraints" => [
                     new Constraints\NotBlank()
-                ),
-            ))
-            ->add('scope', 'text', array(
-                'label' => Translator::getInstance()->trans('Scope', array(), TheliaHybridAuth::DOMAIN_NAME),
-                'label_attr' => array(
+                ],
+            ])
+            ->add('scope', TextType::class, [
+                'label' => Translator::getInstance()->trans('Scope', [], TheliaHybridAuth::DOMAIN_NAME),
+                'label_attr' => [
                     'for' => 'scope'
-                )
-            ))
+                ]
+            ])
         ;
     }
 
-    public function getName()
+    public static function getName(): string
     {
         return 'create_provider';
     }
