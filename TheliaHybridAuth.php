@@ -13,6 +13,7 @@
 namespace TheliaHybridAuth;
 
 use Propel\Runtime\Connection\ConnectionInterface;
+use Symfony\Component\DependencyInjection\Loader\Configurator\ServicesConfigurator;
 use Thelia\Install\Database;
 use Thelia\Module\BaseModule;
 use Thelia\Tools\URL;
@@ -24,6 +25,14 @@ class TheliaHybridAuth extends BaseModule
 {
     /** @var string */
     const DOMAIN_NAME = 'theliahybridauth';
+
+    public static function configureServices(ServicesConfigurator $servicesConfigurator): void
+    {
+        $servicesConfigurator->load(self::getModuleCode() . '\\', __DIR__)
+            ->exclude([THELIA_MODULE_DIR . ucfirst(self::getModuleCode()) . '/I18n/*'])
+            ->autowire()
+            ->autoconfigure();
+    }
 
     public function preActivation(ConnectionInterface $con = null)
     {
