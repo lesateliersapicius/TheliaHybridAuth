@@ -13,9 +13,9 @@
 namespace TheliaHybridAuth\Form;
 
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
+use Symfony\Component\Validator\Constraints;
 use Thelia\Core\Translation\Translator;
 use Thelia\Form\BaseForm;
-use Symfony\Component\Validator\Constraints;
 use TheliaHybridAuth\TheliaHybridAuth;
 
 /**

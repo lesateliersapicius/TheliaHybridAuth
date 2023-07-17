@@ -13,9 +13,9 @@
 namespace TheliaHybridAuth\Form;
 
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
+use Symfony\Component\Validator\Constraints;
 use Thelia\Core\Translation\Translator;
 use Thelia\Form\CustomerCreateForm;
-use Symfony\Component\Validator\Constraints;
 use Thelia\Model\ConfigQuery;
 use TheliaHybridAuth\TheliaHybridAuth;
 
