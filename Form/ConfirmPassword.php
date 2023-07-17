@@ -12,9 +12,10 @@
 
 namespace TheliaHybridAuth\Form;
 
+use Symfony\Component\Form\Extension\Core\Type\PasswordType;
+use Symfony\Component\Validator\Constraints;
 use Thelia\Core\Translation\Translator;
 use Thelia\Form\BaseForm;
-use Symfony\Component\Validator\Constraints;
 use TheliaHybridAuth\TheliaHybridAuth;
 
 /**
@@ -27,25 +28,25 @@ class ConfirmPassword extends BaseForm
     public function buildForm()
     {
         $this->formBuilder
-            ->add("password", "password", array(
-                "constraints" => array(
-                    new Constraints\NotBlank(array(
-                        'groups' => array('existing_customer'),
-                    )),
-                ),
-                "label" => Translator::getInstance()->trans(
-                    "Please enter your password",
-                    array(),
+            ->add('password', PasswordType::class, [
+                'constraints' => [
+                    new Constraints\NotBlank([
+                        'groups' => ['existing_customer'],
+                    ]),
+                ],
+                'label' => Translator::getInstance()->trans(
+                    'Please enter your password',
+                    [],
                     TheliaHybridAuth::DOMAIN_NAME
                 ),
-                "label_attr" => array(
-                    "for" => "password",
-                ),
-                "required"    => false,
-            ));
+                'label_attr' => [
+                    'for' => 'password',
+                ],
+                'required'    => false,
+            ]);
     }
 
-    public function getName()
+    public static function getName(): string
     {
         return 'hybridauth_confirm_password';
     }

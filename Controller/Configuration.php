@@ -21,6 +21,9 @@ use Thelia\Core\Template\ParserContext;
 use Thelia\Core\Translation\Translator;
 use Thelia\Log\Tlog;
 use Thelia\Tools\URL;
+use TheliaHybridAuth\Form\BaseProvider;
+use TheliaHybridAuth\Form\CreateProvider;
+use TheliaHybridAuth\Form\UpdateProvider;
 use TheliaHybridAuth\Model\ProviderConfig;
 use TheliaHybridAuth\Model\ProviderConfigQuery;
 use TheliaHybridAuth\TheliaHybridAuth;
@@ -56,7 +59,7 @@ class Configuration extends BaseAdminController
         $providerSecret = $providerConfig->getSecret();
         $providerScope = $providerConfig->getScope();
 
-        $form = $this->createForm('update.provider', 'form', array(
+        $form = $this->createForm(UpdateProvider::getName(), 'form', array(
             'id' => $providerId,
             'secret' => $providerSecret,
             'scope' => $providerScope
@@ -121,7 +124,7 @@ class Configuration extends BaseAdminController
             return $response;
         }
 
-        $formProvider = $this->createForm('create.provider');
+        $formProvider = $this->createForm(CreateProvider::getName());
 
         try {
             $form = $this->validateForm($formProvider, 'POST');
@@ -183,7 +186,7 @@ class Configuration extends BaseAdminController
             return $response;
         }
 
-        $formProvider = $this->createForm('update.provider');
+        $formProvider = $this->createForm(UpdateProvider::getName());
 
         try {
             $form = $this->validateForm($formProvider, 'POST');
@@ -232,7 +235,7 @@ class Configuration extends BaseAdminController
             return $response;
         }
 
-        $formProvider = $this->createForm('base.provider');
+        $formProvider = $this->createForm(BaseProvider::getName());
 
         try {
             $this->validateForm($formProvider, 'POST');

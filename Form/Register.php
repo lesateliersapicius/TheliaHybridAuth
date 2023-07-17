@@ -12,9 +12,10 @@
 
 namespace TheliaHybridAuth\Form;
 
+use Symfony\Component\Form\Extension\Core\Type\HiddenType;
+use Symfony\Component\Validator\Constraints;
 use Thelia\Core\Translation\Translator;
 use Thelia\Form\CustomerCreateForm;
-use Symfony\Component\Validator\Constraints;
 use Thelia\Model\ConfigQuery;
 use TheliaHybridAuth\TheliaHybridAuth;
 
@@ -25,40 +26,45 @@ use TheliaHybridAuth\TheliaHybridAuth;
  */
 class Register extends CustomerCreateForm
 {
-    public function buildForm()
+    public static function getName(): string
+    {
+        return 'register_hybrid_auth';
+    }
+
+    public function buildForm(): void
     {
         parent::buildForm();
 
         // override 'password' and 'password_confirm' to change type to hidden
         $this->formBuilder
-            ->add("password", "hidden", array(
-                "constraints" => array(
+            ->add('password', HiddenType::class, [
+                'constraints' => [
                     new Constraints\NotBlank(),
-                    new Constraints\Length(array("min" => ConfigQuery::read("password.length", 4))),
-                ),
-                "label" => Translator::getInstance()->trans("Password", array(), TheliaHybridAuth::DOMAIN_NAME),
-                "label_attr" => array(
-                    "for" => "password",
-                ),
-            ))
-            ->add("password_confirm", "hidden", array(
-                "constraints" => array(
+                    new Constraints\Length(['min' => ConfigQuery::read('password.length', 4)]),
+                ],
+                'label' => Translator::getInstance()->trans('Password', [], TheliaHybridAuth::DOMAIN_NAME),
+                'label_attr' => [
+                    'for' => 'password',
+                ],
+            ])
+            ->add('password_confirm', HiddenType::class, [
+                'constraints' => [
                     new Constraints\NotBlank(),
-                    new Constraints\Length(array("min" => ConfigQuery::read("password.length", 4))),
-                    new Constraints\Callback(array("methods" => array(
-                        array($this, "verifyPasswordField"),
-                    ))),
-                ),
-                "label" => Translator::getInstance()->trans(
-                    "Password confirmation",
-                    array(),
+                    new Constraints\Length(['min' => ConfigQuery::read('password.length', 4)]),
+                    new Constraints\Callback(['methods' => [
+                        [$this, 'verifyPasswordField'],
+                    ]]),
+                ],
+                'label' => Translator::getInstance()->trans(
+                    'Password confirmation',
+                    [],
                     TheliaHybridAuth::DOMAIN_NAME
                 ),
-                "label_attr" => array(
-                    "for" => "password_confirmation",
-                ),
-            ))
-            ->add("provider", "hidden", array())
+                'label_attr' => [
+                    'for' => 'password_confirmation',
+                ],
+            ])
+            ->add('provider', HiddenType::class, [])
         ;
     }
 }
