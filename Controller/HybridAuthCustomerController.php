@@ -26,6 +26,7 @@ use Thelia\Model\NewsletterQuery;
 use Thelia\Tools\Password;
 use Thelia\Tools\URL;
 use TheliaHybridAuth\Form\ConfirmPassword;
+use TheliaHybridAuth\Form\Register;
 use TheliaHybridAuth\Model\HybridAuth;
 use TheliaHybridAuth\Model\HybridAuthQuery;
 use TheliaHybridAuth\TheliaHybridAuth;
@@ -33,7 +34,7 @@ use TheliaHybridAuth\TheliaHybridAuth;
 /**
  * Class HybridAuthCustomerController
  * @package TheliaHybridAuth\Controller
- * @author Tom Pradat <tpradat@openstudio.fr>
+ * @author  Tom Pradat <tpradat@openstudio.fr>
  */
 class HybridAuthCustomerController extends CustomerController
 {
@@ -45,7 +46,6 @@ class HybridAuthCustomerController extends CustomerController
         }
 
         try {
-
             TheliaHybridAuth::initHybridAuth();
 
             $providerName = ucfirst($this->getRequest()->get('provider'));
@@ -68,30 +68,29 @@ class HybridAuthCustomerController extends CustomerController
             $this->getRequest()->getSession()->set("hybridauth_provider", $providerName);
             $this->getRequest()->getSession()->set("hybridauth_token", $user_profile->identifier);
 
-            $form = $this->createForm("register.hybrid.auth", "form", array(
-                'title' => $this->getTitleFromGender($user_profile),
-                'firstname' => $user_profile->firstName,
-                'lastname' => $user_profile->lastName,
-                'email' => ($user_profile->emailVerified) ? $user_profile->emailVerified : $user_profile->email,
-                'email_confirm' => ($user_profile->emailVerified) ? $user_profile->emailVerified : $user_profile->email,
-                'cellphone' => $user_profile->phone,
-                'address' => $user_profile->address,
-                'zipcode' => $user_profile->zip,
-                'city' => $user_profile->city,
-                'password' => $password,
+            $form = $this->createForm(Register::getName(), 'form', [
+                'title'            => $this->getTitleFromGender($user_profile),
+                'firstname'        => $user_profile->firstName,
+                'lastname'         => $user_profile->lastName,
+                'email'            => ($user_profile->emailVerified) ?: $user_profile->email,
+                'email_confirm'    => ($user_profile->emailVerified) ?: $user_profile->email,
+                'cellphone'        => $user_profile->phone,
+                'address'          => $user_profile->address,
+                'zipcode'          => $user_profile->zip,
+                'city'             => $user_profile->city,
+                'password'         => $password,
                 'password_confirm' => $password,
-                'provider' => $providerName
-            ));
+                'provider'         => $providerName
+            ]);
 
             $this->getParserContext()->addForm($form);
 
             return $this->render("register-hybrid-auth");
-
         } catch (\Exception $e) {
             $message = $e->getMessage();
         }
 
-        $form = $this->createForm("register.hybrid.auth");
+        $form = $this->createForm(Register::getName());
 
         $form->setErrorMessage($message);
 
@@ -119,12 +118,11 @@ class HybridAuthCustomerController extends CustomerController
 
     public function associationAction($providerName)
     {
-        if (! $this->getSecurityContext()->hasCustomerUser()) {
+        if (!$this->getSecurityContext()->hasCustomerUser()) {
             return $this->generateRedirect(URL::getInstance()->getIndexPage());
         }
 
         try {
-
             TheliaHybridAuth::initHybridAuth();
 
             $config = TheliaHybridAuth::getConfigByProvider($providerName);
@@ -134,7 +132,7 @@ class HybridAuthCustomerController extends CustomerController
 
             $provider = $hybridauth->authenticate(
                 $providerName,
-                array(URL::getInstance()->retrieveCurrent($this->getRequest()))
+                [URL::getInstance()->retrieveCurrent($this->getRequest())]
             );
 
             $identifier = $provider->getUserProfile()->identifier;
@@ -146,17 +144,16 @@ class HybridAuthCustomerController extends CustomerController
             }
 
             return $this->generateRedirectFromRoute('customer.home');
-
         } catch (\Exception $e) {
             $message = $e->getMessage();
         }
 
-        return $this->render('account', array('error' => $message ));
+        return $this->render('account', ['error' => $message]);
     }
 
     public function removeAssociationAction($providerName)
     {
-        if (! $this->getSecurityContext()->hasCustomerUser()) {
+        if (!$this->getSecurityContext()->hasCustomerUser()) {
             return $this->generateRedirect(URL::getInstance()->getIndexPage());
         }
 
@@ -169,22 +166,22 @@ class HybridAuthCustomerController extends CustomerController
 
     public function createAction(EventDispatcherInterface $eventDispatcher)
     {
-        if (! $this->getSecurityContext()->hasCustomerUser()) {
-            $customerCreation = $this->createForm("register.hybrid.auth", "form");
+        if (!$this->getSecurityContext()->hasCustomerUser()) {
+            $customerCreation = $this->createForm(Register::getName(), "form");
 
             try {
                 $form = $this->validateForm($customerCreation, "post");
 
                 $customerCreateEvent = $this->createEventInstance($form->getData());
 
-                $this->dispatch(TheliaEvents::CUSTOMER_CREATEACCOUNT, $customerCreateEvent);
+                $eventDispatcher->dispatch($customerCreateEvent, TheliaEvents::CUSTOMER_CREATEACCOUNT);
 
                 $newCustomer = $customerCreateEvent->getCustomer();
 
                 // Newsletter
                 if (true === $form->get('newsletter')->getData()) {
                     $newsletterEmail = $newCustomer->getEmail();
-                    $nlEvent = new NewsletterEvent(
+                    $nlEvent         = new NewsletterEvent(
                         $newsletterEmail,
                         $this->getRequest()->getSession()->getLang()->getLocale()
                     );
@@ -194,15 +191,15 @@ class HybridAuthCustomerController extends CustomerController
                     // Security : Check if this new Email address already exist
                     if (null !== $newsletter = NewsletterQuery::create()->findOneByEmail($newsletterEmail)) {
                         $nlEvent->setId($newsletter->getId());
-                        $this->dispatch(TheliaEvents::NEWSLETTER_UPDATE, $nlEvent);
+                        $eventDispatcher->dispatch($nlEvent, TheliaEvents::NEWSLETTER_UPDATE);
                     } else {
-                        $this->dispatch(TheliaEvents::NEWSLETTER_SUBSCRIBE, $nlEvent);
+                        $eventDispatcher->dispatch($nlEvent, TheliaEvents::NEWSLETTER_SUBSCRIBE);
                     }
                 }
 
-                $this->processLogin($customerCreateEvent->getCustomer());
+                $this->processLogin($eventDispatcher, $customerCreateEvent->getCustomer());
 
-                $cart = $this->getSession()->getSessionCart($this->getDispatcher());
+                $cart = $this->getSession()->getSessionCart($eventDispatcher);
                 if ($cart->getCartItems()->count() > 0) {
                     $response = $this->generateRedirectFromRoute('cart.view');
                 } else {
@@ -217,7 +214,6 @@ class HybridAuthCustomerController extends CustomerController
                     ->save();
 
                 return $response;
-
             } catch (FormValidationException $e) {
                 $message = $this->getTranslator()->trans(
                     "Please check your input: %s",
@@ -248,17 +244,15 @@ class HybridAuthCustomerController extends CustomerController
 
             $this->getParserContext()
                 ->addForm($customerCreation)
-                ->setGeneralError($message)
-            ;
+                ->setGeneralError($message);
 
-                return $this->render("register-hybrid-auth");
+            return $this->render("register-hybrid-auth");
         }
     }
 
     public function loginAction(EventDispatcherInterface $eventDispatcher)
     {
         if (!$this->getSecurityContext()->hasCustomerUser()) {
-
             TheliaHybridAuth::initHybridAuth();
 
             $providerName = ucfirst($this->getRequest()->get('provider'));
@@ -281,11 +275,10 @@ class HybridAuthCustomerController extends CustomerController
             if ($hybridauth !== null) {
                 $customer = CustomerQuery::create()->findOneById($hybridauth->getCustomerId());
                 $this->processLogin($customer);
+
                 return $this->generateRedirect(URL::getInstance()->getIndexPage());
-
-            // if user registered without hybridauth, try to associate account with hybridauth
+                // if user registered without hybridauth, try to associate account with hybridauth
             } elseif ($mail !== null && CustomerQuery::create()->filterByEmail($mail)->findOne() !== null) {
-
                 $this->getRequest()->getSession()->set('user_email', $mail);
                 $this->getRequest()->getSession()->set('user_token', $identifier);
                 $this->getRequest()->getSession()->set('provider', $providerName);
@@ -293,23 +286,22 @@ class HybridAuthCustomerController extends CustomerController
 
                 return $this->generateRedirectFromRoute(
                     'customer.login.view',
-                    array(
+                    [
                         'confirm_password' => '1',
-                        'provider' => $providerName
-                    )
+                        'provider'         => $providerName
+                    ]
                 );
-
-            // else user has no account, redirect to register with hybridauth
+                // else user has no account, redirect to register with hybridauth
             } else {
                 $this->getRequest()->getSession()->set('user_profile', $provider->getUserProfile());
                 $this->setCurrentRouter('router.front');
 
                 return $this->generateRedirectFromRoute(
                     'customer.login.view',
-                    array(
+                    [
                         'redirect_hybridauth_register' => '1',
-                        'provider' => $providerName
-                    )
+                        'provider'                     => $providerName
+                    ]
                 );
             }
         }
@@ -317,16 +309,14 @@ class HybridAuthCustomerController extends CustomerController
 
     public function linkAction()
     {
-        if (! $this->getSecurityContext()->hasCustomerUser()) {
-
+        if (!$this->getSecurityContext()->hasCustomerUser()) {
             $confirmPasswordForm = new ConfirmPassword($this->getRequest());
 
             try {
-
                 $form = $this->validateForm($confirmPasswordForm, "post");
 
-                $mail = $this->getRequest()->getSession()->get('user_email');
-                $token = $this->getRequest()->getSession()->get('user_token');
+                $mail     = $this->getRequest()->getSession()->get('user_email');
+                $token    = $this->getRequest()->getSession()->get('user_token');
                 $provider = $this->getRequest()->getSession()->get('provider');
 
                 $customer = CustomerQuery::create()->filterByEmail($mail)->findOne();
@@ -339,15 +329,12 @@ class HybridAuthCustomerController extends CustomerController
                         ->setToken($token)
                         ->setProvider($provider)
                         ->setCustomerId($customer->getId())
-                        ->save()
-                    ;
-
+                        ->save();
                 } else {
                     throw new WrongPasswordException();
                 }
 
                 return $this->generateSuccessRedirect($confirmPasswordForm);
-
             } catch (WrongPasswordException $e) {
                 $message = $this->getTranslator()->trans(
                     "Wrong password. Please try again",
@@ -385,26 +372,26 @@ class HybridAuthCustomerController extends CustomerController
     private function createEventInstance($data)
     {
         $customerCreateEvent = new CustomerCreateOrUpdateEvent(
-            isset($data["title"])?$data["title"]:null,
-            isset($data["firstname"])?$data["firstname"]:null,
-            isset($data["lastname"])?$data["lastname"]:null,
-            isset($data["address1"])?$data["address1"]:null,
-            isset($data["address2"])?$data["address2"]:null,
-            isset($data["address3"])?$data["address3"]:null,
-            isset($data["phone"])?$data["phone"]:null,
-            isset($data["cellphone"])?$data["cellphone"]:null,
-            isset($data["zipcode"])?$data["zipcode"]:null,
-            isset($data["city"])?$data["city"]:null,
-            isset($data["country"])?$data["country"]:null,
-            isset($data["email"])?$data["email"]:null,
-            isset($data["password"]) ? $data["password"]:null,
+            isset($data["title"]) ? $data["title"] : null,
+            isset($data["firstname"]) ? $data["firstname"] : null,
+            isset($data["lastname"]) ? $data["lastname"] : null,
+            isset($data["address1"]) ? $data["address1"] : null,
+            isset($data["address2"]) ? $data["address2"] : null,
+            isset($data["address3"]) ? $data["address3"] : null,
+            isset($data["phone"]) ? $data["phone"] : null,
+            isset($data["cellphone"]) ? $data["cellphone"] : null,
+            isset($data["zipcode"]) ? $data["zipcode"] : null,
+            isset($data["city"]) ? $data["city"] : null,
+            isset($data["country"]) ? $data["country"] : null,
+            isset($data["email"]) ? $data["email"] : null,
+            isset($data["password"]) ? $data["password"] : null,
             $this->getRequest()->getSession()->getLang()->getId(),
-            isset($data["reseller"])?$data["reseller"]:null,
-            isset($data["sponsor"])?$data["sponsor"]:null,
-            isset($data["discount"])?$data["discount"]:null,
-            isset($data["company"])?$data["company"]:null,
+            isset($data["reseller"]) ? $data["reseller"] : null,
+            isset($data["sponsor"]) ? $data["sponsor"] : null,
+            isset($data["discount"]) ? $data["discount"] : null,
+            isset($data["company"]) ? $data["company"] : null,
             null,
-            isset($data["state"])?$data["state"]:null
+            isset($data["state"]) ? $data["state"] : null
         );
 
         return $customerCreateEvent;

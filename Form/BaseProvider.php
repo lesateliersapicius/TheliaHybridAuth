@@ -23,7 +23,7 @@ class BaseProvider extends BaseForm
 {
     public static function getName(): string
     {
-        return 'provider';
+        return 'base_provider';
     }
 
     public function buildForm()
