@@ -41,7 +41,7 @@ class TheliaHybridAuth extends BaseModule
             HybridAuthQuery::create()->findOne();
         } catch (\Exception $e) {
             $database = new Database($con);
-            $database->insertSql(null, array(__DIR__ . '/Config/thelia.sql'));
+            $database->insertSql(null, array(__DIR__ . '/Config/TheliaMain.sql'));
             (new ProviderConfig())->setProvider('Facebook')->setEnabled(false)->save();
             (new ProviderConfig())->setProvider('Google')->setEnabled(false)->save();
             (new ProviderConfig())->setProvider('Twitter')->setEnabled(false)->save();
