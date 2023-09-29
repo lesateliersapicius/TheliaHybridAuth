@@ -13,14 +13,13 @@
 namespace TheliaHybridAuth\Controller;
 
 use Hybridauth\Hybridauth;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Thelia\Controller\Admin\BaseAdminController;
-use Thelia\Core\HttpFoundation\Request;
 use Thelia\Core\Security\AccessManager;
 use Thelia\Core\Security\Resource\AdminResources;
 use Thelia\Core\Template\ParserContext;
 use Thelia\Core\Translation\Translator;
 use Thelia\Log\Tlog;
-use Thelia\Tools\URL;
 use TheliaHybridAuth\Form\BaseProvider;
 use TheliaHybridAuth\Form\CreateProvider;
 use TheliaHybridAuth\Form\UpdateProvider;
@@ -36,7 +35,7 @@ use TheliaHybridAuth\TheliaHybridAuth;
 class Configuration extends BaseAdminController
 {
     public function __construct(
-        protected Request $request,
+        protected RequestStack $requestStack,
         protected ParserContext $parserContext
     ) {
     }
@@ -67,7 +66,7 @@ class Configuration extends BaseAdminController
 
         $this->parserContext->addForm($form);
 
-        if ($this->request->isXmlHttpRequest()) {
+        if ($this->requestStack->getCurrentRequest()->isXmlHttpRequest()) {
             return $this->render("include/form-update");
         } else {
             return $this->generateRedirectFromRoute(
@@ -299,7 +298,7 @@ class Configuration extends BaseAdminController
             Tlog::getInstance()->addError("Failed to activate/desactivate provider:", $e);
         }
 
-        if ($this->request->isXmlHttpRequest()) {
+        if ($this->requestStack->getCurrentRequest()->isXmlHttpRequest()) {
             if (null !== $message) {
                 $response = $this->jsonResponse(json_encode(array(
                     "error" => $message
