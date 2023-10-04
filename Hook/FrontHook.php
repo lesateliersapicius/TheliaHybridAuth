@@ -12,13 +12,16 @@
 
 namespace TheliaHybridAuth\Hook;
 
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Thelia\Core\Event\Hook\HookRenderBlockEvent;
 use Thelia\Core\Event\Hook\HookRenderEvent;
 use Thelia\Core\Hook\BaseHook;
-use Thelia\Core\HttpFoundation\Request;
+use Thelia\Core\Template\Assets\AssetResolverInterface;
 use Thelia\Core\Template\TemplateDefinition;
 use Thelia\Core\Translation\Translator;
 use TheliaHybridAuth\TheliaHybridAuth;
+use TheliaSmarty\Template\SmartyParser;
 
 /**
  * Class FrontHook
@@ -27,20 +30,21 @@ use TheliaHybridAuth\TheliaHybridAuth;
  */
 class FrontHook extends BaseHook
 {
-    /** @var Request */
-    protected $request;
-
-    public function __construct(Request $request)
-    {
-        $this->request = $request;
+    public function __construct(
+        SmartyParser $parser = null,
+        AssetResolverInterface $resolver = null,
+        EventDispatcherInterface $eventDispatcher = null,
+        protected RequestStack $requestStack
+    ) {
+        parent::__construct($parser, $resolver, $eventDispatcher);
     }
 
     // Register
     public function onRegisterTop(HookRenderEvent $event)
     {
         // we don't display register buttons when the user is registering with a provider
-        if (strcmp($this->request->get('_route'), 'hybridauth.register.get') !== 0
-            && strcmp($this->request->get('_route'), 'hybridauth.register.post') !== 0) {
+        if (strcmp($this->requestStack->getCurrentRequest()->get('_route'), 'hybridauth.register.get') !== 0
+            && strcmp($this->requestStack->getCurrentRequest()->get('_route'), 'hybridauth.register.post') !== 0) {
             $event->add($this->render('hybrid-auth-register-buttons.html'));
         }
     }
