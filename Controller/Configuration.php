@@ -13,6 +13,7 @@
 namespace TheliaHybridAuth\Controller;
 
 use Hybridauth\Hybridauth;
+use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Thelia\Controller\Admin\BaseAdminController;
 use Thelia\Core\Security\AccessManager;
@@ -58,7 +59,7 @@ class Configuration extends BaseAdminController
         $providerSecret = $providerConfig->getSecret();
         $providerScope = $providerConfig->getScope();
 
-        $form = $this->createForm(UpdateProvider::getName(), 'form', array(
+        $form = $this->createForm(UpdateProvider::getName(), FormType::class, array(
             'id' => $providerId,
             'secret' => $providerSecret,
             'scope' => $providerScope

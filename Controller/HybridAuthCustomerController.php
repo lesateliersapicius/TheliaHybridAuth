@@ -14,6 +14,7 @@ namespace TheliaHybridAuth\Controller;
 
 use Front\Controller\CustomerController;
 use Front\Front;
+use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
@@ -81,7 +82,7 @@ class HybridAuthCustomerController extends CustomerController
             $this->requestStack->getSession()->set("hybridauth_provider", $providerName);
             $this->requestStack->getSession()->set("hybridauth_token", $user_profile->identifier);
 
-            $form = $this->createForm(Register::getName(), 'form', [
+            $form = $this->createForm(Register::getName(), FormType::class, [
                 'title'            => $this->getTitleFromGender($user_profile),
                 'firstname'        => $user_profile->firstName,
                 'lastname'         => $user_profile->lastName,
