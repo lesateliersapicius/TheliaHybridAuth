@@ -51,9 +51,7 @@ class Register extends CustomerCreateForm
                 'constraints' => [
                     new Constraints\NotBlank(),
                     new Constraints\Length(['min' => ConfigQuery::read('password.length', 4)]),
-                    new Constraints\Callback(['methods' => [
-                        [$this, 'verifyPasswordField'],
-                    ]]),
+                    new Constraints\Callback(['callback' => [$this, 'verifyPasswordField']]),
                 ],
                 'label' => Translator::getInstance()->trans(
                     'Password confirmation',
