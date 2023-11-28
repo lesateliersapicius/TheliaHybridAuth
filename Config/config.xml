@@ -18,7 +18,10 @@
             <tag name="hook.event_listener" event="account.additional" type="front" method="onAccountAdditional"/>
             <tag name="hook.event_listener" event="main.stylesheet" type="front" method="onMainStylesheet"/>
             <tag name="hook.event_listener" event="main.javascript-initialization" type="front" method="onMainJavascriptInitialization"/>
-            <argument type="service" id="request" />
+            <argument type="service" id="thelia.parser" />
+            <argument type="service" id="thelia.parser.asset.resolver" />
+            <argument type="service" id="event_dispatcher" />
+            <argument type="service" id="request_stack" />
         </hook>
         <hook id="hybridauth.back.hook" class="TheliaHybridAuth\Hook\BackHook" scope="request">
             <tag name="hook.event_listener" event="module.configuration" type="back" method="onModuleConfiguration"/>
