@@ -323,7 +323,7 @@ class HybridAuthCustomerController extends CustomerController
         }
     }
 
-    public function linkAction()
+    public function linkAction(EventDispatcherInterface $eventDispatcher)
     {
         if (!$this->securityContext->hasCustomerUser()) {
             $confirmPasswordForm = new ConfirmPassword($this->requestStack->getCurrentRequest());
@@ -338,7 +338,7 @@ class HybridAuthCustomerController extends CustomerController
                 $customer = CustomerQuery::create()->filterByEmail($mail)->findOne();
 
                 if ($customer !== null && $customer->checkPassword($form->get('password')->getData())) {
-                    $this->processLogin($customer);
+                    $this->processLogin($eventDispatcher, $customer);
 
                     $ha = new HybridAuth();
                     $ha
