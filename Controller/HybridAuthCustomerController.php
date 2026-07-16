@@ -140,15 +140,19 @@ class HybridAuthCustomerController extends CustomerController
             TheliaHybridAuth::initHybridAuth();
 
             $config = TheliaHybridAuth::getConfigByProvider($providerName);
+            $config['providers'][$providerName]['authorize_url_parameters'] = [
+                TheliaHybridAuth::STATE_CONFIG => TheliaHybridAuth::STATE_CONFIG_PARAM . bin2hex(random_bytes(16)),
+            ];
 
             $hybridauth = new \Hybridauth\Hybridauth($config);
             //$hybridauth = new \Hybrid_Auth($config);
 
             $provider = $hybridauth->authenticate(
-                $providerName,
-                [URL::getInstance()->retrieveCurrent($this->requestStack)]
+                $providerName
             );
 
+            // Si l'appel ci-dessus a redirige vers le provider (1er passage), exit() a deja ete
+            // appele et le code ci-dessous n'est jamais atteint sur cette requete.
             $identifier = $provider->getUserProfile()->identifier;
 
             if (null !== $id = $this->requestStack->getSession()->getCustomerUser()->getId()) {
@@ -160,6 +164,7 @@ class HybridAuthCustomerController extends CustomerController
             return $this->generateRedirectFromRoute('customer.home');
         } catch (\Exception $e) {
             $message = $e->getMessage();
+            Tlog::getInstance()->error(sprintf('[HybridAuth][associationAction] exception : %s', $message));
         }
 
         return $this->render('account', ['error' => $message]);
@@ -267,15 +272,41 @@ class HybridAuthCustomerController extends CustomerController
 
     public function loginAction(EventDispatcherInterface $eventDispatcher)
     {
+        $providerName = ucfirst($this->requestStack->getCurrentRequest()->get('provider'));
+        $state = (string) $this->requestStack->getCurrentRequest()->get(TheliaHybridAuth::STATE_CONFIG);
+
+        // Si le customer est déja loggfer et souhaite une assocaiton avec son comte google
+        if ($this->securityContext->hasCustomerUser() && str_starts_with($state, TheliaHybridAuth::STATE_CONFIG_PARAM)) {
+            try {
+                TheliaHybridAuth::initHybridAuth();
+
+                $config = TheliaHybridAuth::getConfigByProvider($providerName);
+
+                $hybridauth = new \Hybridauth\Hybridauth($config);
+                $provider = $hybridauth->authenticate($providerName);
+
+                $user = $this->requestStack->getSession()->getCustomerUser();
+
+                if ($user !== null) {
+                    (new HybridAuth())
+                        ->setCustomerId($user->getId())
+                        ->setToken($provider->getUserProfile()->identifier)
+                        ->setProvider($providerName)
+                        ->save();
+                }
+            } catch (\Exception $e) {
+                Tlog::getInstance()->error(sprintf('[HybridAuth][loginAction] exception pendant l\'association : %s', $e->getMessage()));
+            }
+
+            return $this->generateRedirectFromRoute('customer.home');
+        }
+
         if (!$this->securityContext->hasCustomerUser()) {
             TheliaHybridAuth::initHybridAuth();
-
-            $providerName = ucfirst($this->requestStack->getCurrentRequest()->get('provider'));
 
             $config = TheliaHybridAuth::getConfigByProvider($providerName);
 
             $hybridauth = new \Hybridauth\Hybridauth($config);
-
             $provider = $hybridauth->authenticate($providerName);
 
             $identifier = $provider->getUserProfile()->identifier;
