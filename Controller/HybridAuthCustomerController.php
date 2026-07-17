@@ -150,7 +150,10 @@ class HybridAuthCustomerController extends CustomerController
             $provider = $hybridauth->authenticate(
                 $providerName
             );
-
+            // Pemrettre uniquement d'associer un email identique a celui d'u compte google
+            if (strcasecmp($provider->getUserProfile()->email, $this->requestStack->getSession()->getCustomerUser()->getEmail()) !== 0) {
+                return $this->generateRedirect(URL::getInstance()->getIndexPage());
+            }
             // Si l'appel ci-dessus a redirige vers le provider (1er passage), exit() a deja ete
             // appele et le code ci-dessous n'est jamais atteint sur cette requete.
             $identifier = $provider->getUserProfile()->identifier;
@@ -274,8 +277,7 @@ class HybridAuthCustomerController extends CustomerController
     {
         $providerName = ucfirst($this->requestStack->getCurrentRequest()->get('provider'));
         $state = (string) $this->requestStack->getCurrentRequest()->get(TheliaHybridAuth::STATE_CONFIG);
-
-        // Si le customer est déja loggfer et souhaite une assocaiton avec son comte google
+        // Si le customer est déja logger et souhaite une association avec son comte google
         if ($this->securityContext->hasCustomerUser() && str_starts_with($state, TheliaHybridAuth::STATE_CONFIG_PARAM)) {
             try {
                 TheliaHybridAuth::initHybridAuth();
@@ -284,10 +286,13 @@ class HybridAuthCustomerController extends CustomerController
 
                 $hybridauth = new \Hybridauth\Hybridauth($config);
                 $provider = $hybridauth->authenticate($providerName);
-
                 $user = $this->requestStack->getSession()->getCustomerUser();
+                // Pemrettre uniquement d'associer un email identique a celui d'u compte google
+                if (strcasecmp($provider->getUserProfile()->email, $this->requestStack->getSession()->getCustomerUser()->getEmail()) !== 0) {
+                    return $this->generateRedirect(URL::getInstance()->getIndexPage());
+                }
 
-                if ($user !== null) {
+                if ($user !== null ) {
                     (new HybridAuth())
                         ->setCustomerId($user->getId())
                         ->setToken($provider->getUserProfile()->identifier)
