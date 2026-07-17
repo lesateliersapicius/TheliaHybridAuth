@@ -286,7 +286,9 @@ class HybridAuthCustomerController extends CustomerController
 
                 $hybridauth = new \Hybridauth\Hybridauth($config);
                 $provider = $hybridauth->authenticate($providerName);
+
                 $user = $this->requestStack->getSession()->getCustomerUser();
+
                 // Pemrettre uniquement d'associer un email identique a celui d'u compte google
                 if (strcasecmp($provider->getUserProfile()->email, $this->requestStack->getSession()->getCustomerUser()->getEmail()) !== 0) {
                     return $this->generateRedirect(URL::getInstance()->getIndexPage());
