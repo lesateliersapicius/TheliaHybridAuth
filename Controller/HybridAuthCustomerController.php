@@ -162,6 +162,7 @@ class HybridAuthCustomerController extends CustomerController
                 $hybridauthEntry = new HybridAuth();
                 $hybridauthEntry->setCustomerId($id)->setToken($identifier)->setProvider($providerName);
                 $hybridauthEntry->save();
+                Tlog::getInstance()->error("Save HybridAUth");
             }
 
             return $this->generateRedirectFromRoute('customer.home');
@@ -300,6 +301,13 @@ class HybridAuthCustomerController extends CustomerController
                         ->setToken($provider->getUserProfile()->identifier)
                         ->setProvider($providerName)
                         ->save();
+
+                    $countAfterSave = HybridAuthQuery::create()->filterByCustomerId($user->getId())->count();
+                    Tlog::getInstance()->error(sprintf(
+                        '[HybridAuth][loginAction][association] save termine pour customer_id=%s, count HybridAuthQuery juste apres = %s',
+                        $user->getId(),
+                        $countAfterSave
+                    ));
                 }
             } catch (\Exception $e) {
                 Tlog::getInstance()->error(sprintf('[HybridAuth][loginAction] exception pendant l\'association : %s', $e->getMessage()));
@@ -376,14 +384,13 @@ class HybridAuthCustomerController extends CustomerController
                 $customer = CustomerQuery::create()->filterByEmail($mail)->findOne();
 
                 if ($customer !== null && $customer->checkPassword($form->get('password')->getData())) {
-                    $this->processLogin($eventDispatcher, $customer);
-
                     $ha = new HybridAuth();
                     $ha
                         ->setToken($token)
                         ->setProvider($provider)
                         ->setCustomerId($customer->getId())
                         ->save();
+                    $this->processLogin($eventDispatcher, $customer);
                 } else {
                     throw new WrongPasswordException();
                 }
