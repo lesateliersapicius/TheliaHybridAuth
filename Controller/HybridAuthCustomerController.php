@@ -326,7 +326,7 @@ class HybridAuthCustomerController extends CustomerController
     public function linkAction(EventDispatcherInterface $eventDispatcher)
     {
         if (!$this->securityContext->hasCustomerUser()) {
-            $confirmPasswordForm = new ConfirmPassword($this->requestStack->getCurrentRequest());
+            $confirmPasswordForm = $this->createForm(ConfirmPassword::getName());
 
             try {
                 $form = $this->validateForm($confirmPasswordForm, "post");
