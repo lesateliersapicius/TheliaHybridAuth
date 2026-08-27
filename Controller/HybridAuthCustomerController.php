@@ -140,29 +140,18 @@ class HybridAuthCustomerController extends CustomerController
             TheliaHybridAuth::initHybridAuth();
 
             $config = TheliaHybridAuth::getConfigByProvider($providerName);
+            // Le callback du provider est commun aux flux de connexion et d'association
+            // (/login/hybridauth) : ce marqueur permet à loginAction de reconnaître un
+            // retour d'association.
             $config['providers'][$providerName]['authorize_url_parameters'] = [
                 TheliaHybridAuth::STATE_CONFIG => TheliaHybridAuth::STATE_CONFIG_PARAM . bin2hex(random_bytes(16)),
             ];
 
-            $hybridauth = new \Hybridauth\Hybridauth($config);
-            //$hybridauth = new \Hybrid_Auth($config);
-
-            $provider = $hybridauth->authenticate(
-                $providerName
-            );
-            // Pemrettre uniquement d'associer un email identique a celui d'u compte google
-            if (strcasecmp($provider->getUserProfile()->email, $this->requestStack->getSession()->getCustomerUser()->getEmail()) !== 0) {
+            // Au premier passage, l'authentification redirige vers le provider et appelle
+            // exit() : la suite n'est atteinte que si le client est déjà authentifié auprès
+            // de lui, sinon le retour est traité par loginAction.
+            if (!$this->associateProviderToCurrentCustomer($providerName, $config)) {
                 return $this->generateRedirect(URL::getInstance()->getIndexPage());
-            }
-            // Si l'appel ci-dessus a redirige vers le provider (1er passage), exit() a deja ete
-            // appele et le code ci-dessous n'est jamais atteint sur cette requete.
-            $identifier = $provider->getUserProfile()->identifier;
-
-            if (null !== $id = $this->requestStack->getSession()->getCustomerUser()->getId()) {
-                $hybridauthEntry = new HybridAuth();
-                $hybridauthEntry->setCustomerId($id)->setToken($identifier)->setProvider($providerName);
-                $hybridauthEntry->save();
-                Tlog::getInstance()->error("Save HybridAUth");
             }
 
             return $this->generateRedirectFromRoute('customer.home');
@@ -172,6 +161,32 @@ class HybridAuthCustomerController extends CustomerController
         }
 
         return $this->render('account', ['error' => $message]);
+    }
+
+    /**
+     * Associe l'identité sociale au client connecté.
+     *
+     * @return bool false si aucun client n'est connecté ou si l'e-mail du profil social
+     *              diffère de celui du compte client
+     */
+    protected function associateProviderToCurrentCustomer(string $providerName, array $config): bool
+    {
+        $provider = (new \Hybridauth\Hybridauth($config))->authenticate($providerName);
+        $customer = $this->requestStack->getSession()->getCustomerUser();
+
+        // N'autoriser l'association qu'avec un compte social portant le même e-mail
+        if ($customer === null
+            || strcasecmp((string) $provider->getUserProfile()->email, $customer->getEmail()) !== 0) {
+            return false;
+        }
+
+        (new HybridAuth())
+            ->setCustomerId($customer->getId())
+            ->setToken($provider->getUserProfile()->identifier)
+            ->setProvider($providerName)
+            ->save();
+
+        return true;
     }
 
     public function removeAssociationAction($providerName)
@@ -278,36 +293,16 @@ class HybridAuthCustomerController extends CustomerController
     {
         $providerName = ucfirst($this->requestStack->getCurrentRequest()->get('provider'));
         $state = (string) $this->requestStack->getCurrentRequest()->get(TheliaHybridAuth::STATE_CONFIG);
-        // Si le customer est déja logger et souhaite une association avec son comte google
+        // Retour du provider pour une association demandée par un client déjà connecté
         if ($this->securityContext->hasCustomerUser() && str_starts_with($state, TheliaHybridAuth::STATE_CONFIG_PARAM)) {
             try {
                 TheliaHybridAuth::initHybridAuth();
 
-                $config = TheliaHybridAuth::getConfigByProvider($providerName);
-
-                $hybridauth = new \Hybridauth\Hybridauth($config);
-                $provider = $hybridauth->authenticate($providerName);
-
-                $user = $this->requestStack->getSession()->getCustomerUser();
-
-                // Pemrettre uniquement d'associer un email identique a celui d'u compte google
-                if (strcasecmp($provider->getUserProfile()->email, $this->requestStack->getSession()->getCustomerUser()->getEmail()) !== 0) {
+                if (!$this->associateProviderToCurrentCustomer(
+                    $providerName,
+                    TheliaHybridAuth::getConfigByProvider($providerName)
+                )) {
                     return $this->generateRedirect(URL::getInstance()->getIndexPage());
-                }
-
-                if ($user !== null ) {
-                    (new HybridAuth())
-                        ->setCustomerId($user->getId())
-                        ->setToken($provider->getUserProfile()->identifier)
-                        ->setProvider($providerName)
-                        ->save();
-
-                    $countAfterSave = HybridAuthQuery::create()->filterByCustomerId($user->getId())->count();
-                    Tlog::getInstance()->error(sprintf(
-                        '[HybridAuth][loginAction][association] save termine pour customer_id=%s, count HybridAuthQuery juste apres = %s',
-                        $user->getId(),
-                        $countAfterSave
-                    ));
                 }
             } catch (\Exception $e) {
                 Tlog::getInstance()->error(sprintf('[HybridAuth][loginAction] exception pendant l\'association : %s', $e->getMessage()));
