@@ -1,4 +1,5 @@
 <div class="panel-body" id="socials-association">
+    {hook name='account.after-javascript-include'}
     {if isset($error)}
         <div class="alert alert-danger col-md-12">
             {intl l="Oops an error occured : %e" e={$error} d="theliahybridauth.fo.default"}

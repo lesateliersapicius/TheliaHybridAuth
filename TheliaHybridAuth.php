@@ -26,6 +26,9 @@ class TheliaHybridAuth extends BaseModule
     /** @var string */
     const DOMAIN_NAME = 'theliahybridauth';
 
+    const STATE_CONFIG = 'state';
+    const STATE_CONFIG_PARAM = 'associate-';
+
     public static function configureServices(ServicesConfigurator $servicesConfigurator): void
     {
         $servicesConfigurator->load(self::getModuleCode() . '\\', __DIR__)
